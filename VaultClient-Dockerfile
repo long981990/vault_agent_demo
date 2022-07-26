@@ -1,0 +1,5 @@
+FROM vault:latest
+RUN apk update && apk add jq
+WORKDIR /tmp
+ADD vault-agent-run.sh run.sh
+CMD ["/bin/sh", "run.sh"]

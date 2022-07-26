@@ -1,0 +1,72 @@
+version: "3.8"
+services:
+  vault-server:
+    image: vault:latest
+    restart: always
+    ports:
+      - "8200:8200"
+    environment:
+      VAULT_ADDR: "http://0.0.0.0:8200"
+      VAULT_DEV_ROOT_TOKEN_ID: "longtd@vpbank"
+    volumes:
+      - /vault/data
+      - /etc/vault/logs
+    cap_add:
+      - IPC_LOCK
+    networks:
+      vault-network:
+        ipv4_address: 172.21.0.10
+        aliases:
+          - vault-server
+  vault-client:
+    build: 
+      context: .
+      dockerfile: VaultClient-Dockerfile
+    restart: always
+    environment:
+      VAULT_ADDR: "http://vault-server:8200"
+    volumes:
+      - ./vault-agent:/vault-agent:rw
+      - ./nginx:/usr/share/nginx/html:rw
+    networks:
+      vault-network:
+        ipv4_address: 172.21.0.20
+        aliases:
+          - vault-client
+    depends_on:
+      - vault-server
+  nginx:
+    image: "nginx:1.19.9-alpine"
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx:/usr/share/nginx/html
+    environment:
+      CONFIG_FILE: '/config/config.json'
+    networks:
+      vault-network:
+        ipv4_address: 172.21.0.30
+        aliases:
+          - nginx-demo
+  database:
+    image: postgres:latest
+    ports:
+      - "15432:5432"
+    volumes: 
+      - ./postgres/data:/var/lib/postgresql/data
+      # copy the sql script to create tables
+      - ./postgres/sql/postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_DB: 'products'
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'password'
+    networks:
+      vault-network:
+        ipv4_address: 172.21.0.40
+        aliases:
+          - postgre-demo
+networks:
+  vault-network:
+    ipam:
+      config:
+        - subnet: 172.21.0.0/24
