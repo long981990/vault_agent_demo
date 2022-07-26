@@ -1,0 +1,6 @@
+postgres/data
+nginx/index.html
+nginx/kv.html
+vault-agent/nginx-role_id
+vault-agent/nginx-secret_id
+vault-agent/token
