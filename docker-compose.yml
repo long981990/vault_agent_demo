@@ -35,6 +35,7 @@ services:
           - vault-client
     depends_on:
       - vault-server
+      - database
   nginx:
     image: "nginx:1.19.9-alpine"
     ports:

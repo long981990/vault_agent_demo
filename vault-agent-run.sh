@@ -7,8 +7,18 @@ until vault status > /dev/null 2>&1 || [ "$VAULT_RETRIES" -eq 0 ]; do
         sleep 3
 done
 
-FILE=./init.lock
-if test -f "$FILE"; then
+#SRY FOR LAZY
+POSTGRES_LOCK_FILE=./postgres-wait.lock
+if test -f "$POSTGRES_LOCK_FILE"; then
+  continue
+else
+  sleep 20
+  touch postgres-wait.lock
+fi
+
+VAULT_LOCK_FILE=./init.lock
+if test -f "$VAULT_LOCK_FILE"; then
+  rm run.sh
   vault agent -log-level debug -config=/vault-agent/config/vault-agent.hcl
 else
   export VAULT_TOKEN=longtd@vpbank
@@ -41,7 +51,7 @@ else
     creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}' INHERIT;
     GRANT ro TO \"{{name}}\";" \
     default_ttl="30s" \
-    max_ttl="24h"
+    max_ttl="1h"
   
   # Enable AppRole and create a role:
   echo "Enable AppRole and create a role..."
